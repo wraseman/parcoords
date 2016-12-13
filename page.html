@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="./css/styling.css">
+    <link rel="stylesheet" type="text/css" href="./css/d3.parcoords.css">
+    <script src="./js/d3.js"></script>
+    <script src="./js/d3.svg.multibrush.js"></script>
+    <script src="./js/sylvester.js"></script>
+    <script src="./js/underscore.js"></script>
+    <script src="./js/slickgrid/jquery-1.7.min.js"></script>
+    <script src="./js/underscore.js"></script>
+    <script src="./js/underscore.math.js"></script>
+    <script src="./js/d3.parcoords.js"></script>
+    <script src="http://d3js.org/queue.v1.min.js"></script>
+    <script src="./js/canvas2svg.js"></script>
+    <script src="./js/FileSaver.js"></script>
+    <script src="./js/vkbeautify.0.99.00.beta.js"></script>
+</head>
+<body>
+<p>Use this slider to change the curve smoothness. The current value is <strong id="smooth">0.0</strong><br/>
+    <input type="range" min="0" max="0.25" value="0.0" step="0.01" id="smoothness"/>
+<p>Use this slider to change the bundling strength. The current value is <strong id="strength">0</strong><br/>
+    <input type="range" min="0" max="1" value="0" step="0.05" id="bundling"/>
+<div id="bundleDimension">Bundle using clusters determined by: </div>
+<div id="example" class="parcoords"></div>
+<button onclick="saveSVG();">Save as SVG File</button>
+<script type="text/javascript" src="parallel.js"></script>
+</body>
+</html>
