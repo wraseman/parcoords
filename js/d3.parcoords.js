@@ -1,5 +1,5 @@
 d3.parcoords = function(config) {
-  var __ = {
+  var __ = {  /* '__' is just a regular variable name. it appears to stand for default */
     data: [],
     highlighted: [],
     dimensions: {},
@@ -9,14 +9,14 @@ d3.parcoords = function(config) {
     alphaOnBrushed: 0.0,
     mode: "default",
     rate: 20,
-    width: 600,
-    height: 300,
-    margin: { top: 24, right: 0, bottom: 12, left: 0 },
+    width: 600,  // default width
+    height: 300,  // default height
+    margin: { top: 24, right: 0, bottom: 12, left: 0 }, 
     nullValueSeparator: "undefined", // set to "top" or "bottom"
     nullValueSeparatorPadding: { top: 8, right: 0, bottom: 8, left: 0 },
-    color: "#069",
+    color: "#069",  // default line color is blue
     composite: "source-over",
-    alpha: 0.7,
+    alpha: 0.7,  // default line tranparency
     bundlingStrength: 0.5,
     bundleDimension: null,
     smoothness: 0.0,
@@ -26,7 +26,7 @@ d3.parcoords = function(config) {
     animationTime: 1100 // How long it takes to flip the axis when you double click
   };
 
-  extend(__, config);
+  extend(__, config);  // extend is a user defined function
 
   if (config && config.dimensionTitles) {
     console.warn("dimensionTitles passed in config is deprecated. Add title to dimension object.");
@@ -48,6 +48,7 @@ var pc = function(selection) {
   __.height = selection[0][0].clientHeight;
 
   // canvas data layers
+  // forEach() method executes a proided function once for each array element.
   ["marks", "foreground", "brushed", "highlight"].forEach(function(layer) {
     canvas[layer] = selection
       .append("canvas")

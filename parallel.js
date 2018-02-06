@@ -10,18 +10,6 @@ queue()
     .defer(d3.csv, './data/data.csv')
     .await(processData);
 
-// smoothness slider
-d3.select("#smoothness").on("change", function() {
-    d3.select("#smooth").text(this.value);
-    pc0.smoothness(this.value).render();
-});
-
-// bundling strength slider
-d3.select("#bundling").on("change", function() {
-    d3.select("#strength").text(this.value);
-    pc0.bundlingStrength(this.value).render();
-});
-
 function processData(error, data) {
     const header = d3.keys(data[0]);
     const dimensionNames = header.slice(1);
@@ -40,40 +28,15 @@ function processData(error, data) {
 
     pc0 = d3.parcoords()("#example");
     pc0.data(data)
-        .bundlingStrength(0) // set bundling strength
+        // .bundlingStrength(0) // set bundling strength
         .smoothness(0)
-        .bundleDimension("obj 0")
-        .showControlPoints(false)
+        // .bundleDimension("obj 0")
+        // .showControlPoints(false)
         .composite("darken")
         .dimensions(dimensions) // should be called right before render
         .render()
         .brushMode("1D-axes")
         .reorderable();
-
-    pc0.svg.selectAll("text")
-        .style("font", "10px");
-
-    // click dimension to activate coloring
-    pc0.svg.selectAll(".dimension")
-        .on("click", change_color)
-        .selectAll(".label")
-        .style("font-size", "14px");
-    change_color("obj 0");
-
-    const select = d3.select("#bundleDimension")
-        .append("select")
-        .on("change", function(){
-            pc0.bundleDimension(this.value);
-            pc0.render();
-        });
-
-    // fill the drop down box with the names of the dimensions
-    select.selectAll('option')
-        .data(d3.keys(pc0.dimensions()))
-        .enter()
-        .append("option")
-        .attr("value", function(d) {return d;})
-        .text(function(d) {return d;});
 }
 
 function saveSVG(){
@@ -84,10 +47,9 @@ function saveSVG(){
     // contexts. The reason for this last step is that
     // the scaling of the temporary context is wrong, probably due to retina
     // specific scaling moreover.
-    // TODO:: layers are safed as seperate groups, but still displayed
+    // TODO:: layers are saved as seperate groups, but still displayed
     // TODO:: include all css information
-    const layerNames = ["marks", "highlight", "brushed", "foreground"];
-
+    const layerNames = ["marks", "foreground", "brushed"];
 
     // for a good starting point, see http://stackoverflow.com/questions/8571294/method-to-convert-html5-canvas-to-svg
     // I use http://gliffy.github.io/canvas2svg/
@@ -100,23 +62,42 @@ function saveSVG(){
         layerName = layerNames[i];
 
         oldLayerContext = pc0.ctx[layerName];
-        newLayerContext = new C2S(720, 200); //TODO:: should be extracted explicitly from css
+        newLayerContext = new C2S(d3.select('canvas').attr('width'), d3.select('canvas').attr('width')); //WJR edit: width, height
 
         oldLayers[layerName] = oldLayerContext;
         pc0.ctx[layerName] = newLayerContext;
     }
     pc0.render();
 
-    //get svg axis
-    const svgAxis = new XMLSerializer().serializeToString(d3.select('svg').node());
-    const axisXmlDocument = $.parseXML(svgAxis);
+	const svgAxis = new XMLSerializer().serializeToString(d3.select("svg").node());
+	// const svgAxis = new XMLSerializer().serializeToString(d3.select('svg').node());
+	const axisXmlDocument = $.parseXML(svgAxis);
 
     // we need to add the css styling information explicitly
     // this is an incomplete subset of the relevant styles
-    setAttributeByTag(axisXmlDocument, "axis", "fill", "none");
-    setAttributeByTag(axisXmlDocument, "path", "stroke", "#222");
-    setAttributeByTag(axisXmlDocument, "line", "stroke", "#222");
-    setAttributeByClass(axisXmlDocument, "background", "fill", "none");
+	// WJR: this is only changing the axis (formerly SVG, now XML) attributes
+	// WJR: create new helper functions to implement all CSS attributes
+    // setAttributeByTag(axisXmlDocument, "axis", "fill", "none");    // no discernable difference
+    // setAttributeByTag(axisXmlDocument, "path", "stroke", "#222");  // add black lines for axes
+    // setAttributeByTag(axisXmlDocument, "line", "stroke", "#222");  // add black tick marks
+	  // setAttributeByClass(axisXmlDocument, "background", "fill", "none"); // fill the box around axes a certain color
+    // setAttributeByClass(axisXmlDocument, "resize", "fill", "rgba(255,0,0,1)");  // change resize brush fill
+
+    // recreate d3.parcoords.css rules
+    setAttributeByCssSelector(axisXmlDocument, "text.label", "cursor", "default;");  // d3.parcoords.css:9
+    setAttributeByCssSelector(axisXmlDocument, "rect.background", "style", "fill: none;");  // d3.parcoords.css:13
+    setAttributeByCssSelector(axisXmlDocument, ".resize rect", "style", "fill: rgba(0,0,0,0.1);");  // d3.parcoords.css:19
+    // setAttributeByCssSelector(axisXmlDocument, ".resize rect", "style", "fill: none;");  // opacity not well supported in SVG editors
+    setAttributeByCssSelector(axisXmlDocument, "rect.extent", "style",
+      "fill: rgba(255,255,255,0.25); stroke: rgba(0,0,0,0.6);"); // d3.parcoords.css:22
+      // setAttributeByCssSelector(axisXmlDocument, "rect.extent", "style",
+        // "fill: none; stroke: gray;"); // opacity not well supported in SVG editors
+    setAttributeByCssSelector(axisXmlDocument, ".axis line, .axis path", "style",
+      "fill: none; stroke: #222; shape-rendering: crispEdges;");  // d3.parcoords.css:26
+
+    // additional css rules needed
+    setAttributeByCssSelector(axisXmlDocument, "text.label", "style", "font: 14px sans-serif;");  // make axis labels sans-serif
+    setAttributeByCssSelector(axisXmlDocument, ".tick text", "style", "font: 14px sans-serif; text-anchor: end;");  // makes tick labels sans-serif
 
     // add a new node into which we are going to add the lines
     // by copying the node from the axis svg, we get the
@@ -172,19 +153,27 @@ function saveSVG(){
     pc0.render();
 }
 
-// helper function for saving svg
-function setAttributeByTag(xmlDocument, tagName, attribute, value){
-    const paths = xmlDocument.getElementsByTagName(tagName);
-    for (let i = 0; i < paths.length; i++) {
-        paths[i].setAttribute(attribute, value);
-    }
-}
+// // helper function for saving svg
+// function setAttributeByTag(xmlDocument, tagName, attribute, value){
+//     const paths = xmlDocument.getElementsByTagName(tagName);
+//     for (let i = 0; i < paths.length; i++) {
+//         paths[i].setAttribute(attribute, value);
+//     }
+// }
+//
+// // helper function for saving svg
+// function setAttributeByClass(xmlDocument, className, attribute, value){
+//     const paths = xmlDocument.getElementsByClassName(className);
+//     for (let i = 0; i < paths.length; i++) {
+//         paths[i].setAttribute(attribute, value);
+//     }
+// }
 
 // helper function for saving svg
-function setAttributeByClass(xmlDocument, className, attribute, value){
-    const paths = xmlDocument.getElementsByClassName(className);
-    for (let i = 0; i < paths.length; i++) {
-        paths[i].setAttribute(attribute, value);
+function setAttributeByCssSelector(xmlDocument, cssSelector, attribute, value){
+    const myNodeList = xmlDocument.querySelectorAll(cssSelector);
+    for (let i = 0; i < myNodeList.length; i++) {
+        myNodeList[i].setAttribute(attribute, value);
     }
 }
 
@@ -214,4 +203,3 @@ function normalize(col) {
         return (d-min)/(max-min);
     };
 }
-
