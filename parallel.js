@@ -36,6 +36,7 @@ function processData(error, data) {
         .dimensions(dimensions) // should be called right before render
         .render()
         .brushMode("1D-axes")
+        .shadows()
         .reorderable();
 }
 
@@ -49,7 +50,7 @@ function saveSVG(){
     // specific scaling moreover.
     // TODO:: layers are saved as seperate groups, but still displayed
     // TODO:: include all css information
-    const layerNames = ["marks", "foreground", "brushed"];
+    const layerNames = ["marks", "foreground", "brushed", "highlight"];
 
     // for a good starting point, see http://stackoverflow.com/questions/8571294/method-to-convert-html5-canvas-to-svg
     // I use http://gliffy.github.io/canvas2svg/
@@ -69,19 +70,8 @@ function saveSVG(){
     }
     pc0.render();
 
-	const svgAxis = new XMLSerializer().serializeToString(d3.select("svg").node());
-	// const svgAxis = new XMLSerializer().serializeToString(d3.select('svg').node());
-	const axisXmlDocument = $.parseXML(svgAxis);
-
-    // we need to add the css styling information explicitly
-    // this is an incomplete subset of the relevant styles
-	// WJR: this is only changing the axis (formerly SVG, now XML) attributes
-	// WJR: create new helper functions to implement all CSS attributes
-    // setAttributeByTag(axisXmlDocument, "axis", "fill", "none");    // no discernable difference
-    // setAttributeByTag(axisXmlDocument, "path", "stroke", "#222");  // add black lines for axes
-    // setAttributeByTag(axisXmlDocument, "line", "stroke", "#222");  // add black tick marks
-	  // setAttributeByClass(axisXmlDocument, "background", "fill", "none"); // fill the box around axes a certain color
-    // setAttributeByClass(axisXmlDocument, "resize", "fill", "rgba(255,0,0,1)");  // change resize brush fill
+  	const svgAxis = new XMLSerializer().serializeToString(d3.select("svg").node());
+  	const axisXmlDocument = $.parseXML(svgAxis);
 
     // recreate d3.parcoords.css rules
     setAttributeByCssSelector(axisXmlDocument, "text.label", "cursor", "default;");  // d3.parcoords.css:9
@@ -131,6 +121,11 @@ function saveSVG(){
         // for convenience add the name of the layer to the group as class
         xmlDocument.getElementsByTagName("g")[0].setAttribute("class", layerName);
 
+        // make <rect> transparent for each canvas layer
+        if (layerName != "marks") {  // all layers have a <rect> element associated with it except for the "marks" layer
+          xmlDocument.getElementsByTagName("g")[0].getElementsByTagName("rect")[0].setAttribute("fill", "none");
+        }
+
         // add the group to the node
         // each layers has 2 nodes, a defs node and the actual svg
         // we can safely ignore the defs node
@@ -142,7 +137,8 @@ function saveSVG(){
     const merged = vkbeautify.xml(new XMLSerializer().serializeToString(axisXmlDocument.documentElement));
 
     // turn the string into a blob and use FileSaver.js to enable saving it
-    const blob = new Blob([merged], {type:"application/svg+xml"});
+    // const blob = new Blob([merged], {type:"application/svg+xml"});
+    const blob = new Blob([merged], {type:"image/svg+xml"});  // WJR: changed 'application' to 'image', source: http://www.surekhatech.com/blog/creating-image-from-browser-based-svg-in-d3
     saveAs(blob, "parcoords.svg");
 
     // we are done extracting the SVG information so
